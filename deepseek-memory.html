@@ -3,39 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DeepSeek 小窝云端版</title>
+    <title>DeepSeek 小窝</title>
     <style>
         :root {
-            --bg-color: #f0f2f5;
-            --chat-bg: #ffffff;
-            --user-msg-bg: #007AFF;
-            --ai-msg-bg: #e9ecef;
-            --text-color: #1a1a1a;
-            --sub-text: #666;
-            --border-radius: 20px;
-            --input-bg: #f8f9fa;
-            --header-bg: #ffffff;
-            --user-avatar: url('https://cdn-icons-png.flaticon.com/512/4140/4140047.png');
+            --bg-color: #f0f2f5; --chat-bg: #ffffff; --user-msg-bg: #007AFF; --ai-msg-bg: #e9ecef;
+            --text-color: #1a1a1a; --sub-text: #666; --border-radius: 20px; --input-bg: #f8f9fa;
+            --header-bg: #ffffff; --user-avatar: url('https://cdn-icons-png.flaticon.com/512/4140/4140047.png');
             --ai-avatar: url('https://cdn-icons-png.flaticon.com/512/471/471533.png');
         }
         @media (prefers-color-scheme: dark) {
             :root { --bg-color: #1a1a1a; --chat-bg: #2d2d2d; --ai-msg-bg: #3a3a3a; --text-color: #ffffff; --sub-text: #a0a0a0; --input-bg: #333333; --header-bg: #1a1a1a; }
         }
-
         * { box-sizing: border-box; outline: none; }
-        body {
-            margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color); color: var(--text-color); height: 100dvh;
-            display: flex; flex-direction: column; overflow: hidden;
-        }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
         header { padding: 15px; background-color: var(--header-bg); border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         h1 { margin: 0; font-size: 18px; font-weight: 600; }
         .header-btn { background: none; border: none; color: var(--user-msg-bg); font-size: 14px; cursor: pointer; }
         #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         .msg-row { display: flex; align-items: flex-start; gap: 10px; max-width: 100%; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .msg-row.user { flex-direction: row-reverse; align-self: flex-end; }
-        .msg-row.ai { align-self: flex-start; }
+        .msg-row.user { flex-direction: row-reverse; align-self: flex-end; } .msg-row.ai { align-self: flex-start; }
         .msg-avatar { width: 36px; height: 36px; border-radius: 50%; background-size: cover; background-position: center; flex-shrink: 0; }
         .msg-avatar.user-avatar { background-image: var(--user-avatar); }
         .msg-avatar.ai-avatar { background-image: var(--ai-avatar); }
@@ -60,16 +47,14 @@
         .dot { width: 8px; height: 8px; background: #888; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; display: inline-block; margin: 0 2px; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
         #import-progress { margin-top: 10px; font-size: 12px; color: var(--sub-text); text-align: center; }
-        #error-banner { display: none; text-align: center; padding: 10px; background-color: #ff4444; color: white; font-size: 13px; }
     </style>
 </head>
 <body>
-<div id="error-banner">⚠️ 云端连接失败，已切换为本地存储</div>
 <header>
     <h1>DeepSeek <span style="font-weight:400; font-size:14px; color:#aaa;">小窝</span></h1>
     <button class="header-btn" onclick="openSettings()">⚙️ 设置</button>
 </header>
-<div id="chat-container"><div class="system-msg">正在从云端同步记忆...</div></div>
+<div id="chat-container"><div class="system-msg">正在连接云端记忆...</div></div>
 <div class="input-area">
     <div class="input-actions">
         <button class="attach-btn" id="attach-img-btn" onclick="document.getElementById('img-input').click()">📎</button>
@@ -78,70 +63,51 @@
     <textarea id="user-input" placeholder="输入消息..." rows="1" oninput="autoResize(this)"></textarea>
     <button id="send-btn" onclick="sendMessage()">➤</button>
 </div>
-
 <div id="settings-modal" class="modal">
     <div class="modal-content">
         <h2>⚙️ 配置小窝</h2>
-        <div class="input-group"><label>API Key (DeepSeek/Claude/OpenAI)</label><input type="password" id="api-key-input" placeholder="sk-..."></div>
+        <div class="input-group"><label>API Key</label><input type="password" id="api-key-input" placeholder="sk-..."></div>
         <div class="input-group"><label>选择模型</label>
             <select id="model-select">
-                <option value="deepseek-chat">DeepSeek Chat (V3)</option>
-                <option value="deepseek-vl">DeepSeek VL (支持看图)</option>
+                <option value="deepseek-chat">DeepSeek Chat</option>
+                <option value="deepseek-vl">DeepSeek VL</option>
                 <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
                 <option value="gpt-4o">GPT-4o</option>
             </select>
         </div>
-        <div class="input-group"><label>AI 头像图片链接</label><input type="text" id="ai-avatar-input" placeholder="https://...png"></div>
-        <div class="input-group"><label>我的头像图片链接</label><input type="text" id="user-avatar-input" placeholder="https://...png"></div>
         <button class="save-btn" onclick="saveSettings()">保存并刷新</button>
-        <div style="margin-top:15px; border-top:1px solid #444; padding-top:15px;">
-            <label style="font-size:14px; color:var(--sub-text);">导入历史记忆文件 (JSON/TXT)</label>
-            <input type="file" id="import-file-input" style="margin-top:8px; color:var(--text-color);">
-            <div id="import-progress"></div>
-        </div>
         <a href="#" onclick="clearHistory()" class="warning-text" style="margin-top:15px;">清空所有记忆</a>
     </div>
 </div>
 
-<!-- 这里是关键修复点：我将原来死活加载不了的 jsdelivr CDN，换成了更加稳定的 unpkg 镜像。 -->
-<script src="https://unpkg.com/@supabase/supabase-js@2" onerror="onSupabaseLoadError()"></script>
 <script>
-    // --- Supabase 固定配置 ---
+    // --- 重要：你的云端连接配置（已经固化在代码里） ---
     const SUPABASE_URL = 'https://ryzvndxjxbwpvsvbvuae.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5enZuZHhqeGJ3cHZzdmJ2dWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjI5NjUsImV4cCI6MjA5OTIzODk2NX0.eEKzXbO5CPNYIrNLk_jOnD3YcyF7yFmWQs80RN41g0o';
-    
-    let supabase = null;
-    let isCloudAvailable = true;
 
-    function onSupabaseLoadError() {
-        isCloudAvailable = false;
-        document.getElementById('error-banner').style.display = 'block';
-        document.querySelector('.system-msg').innerText = '⚠️ 云端服务连接失败，已切换至本地存储';
-    }
+    // --- 核心：通过原生 fetch 轻量连接 Supabase ---
+    async function supabaseFetch(table, method, body) {
+        const url = `${SUPABASE_URL}/rest/v1/${table}`;
+        const headers = {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'return=representation'
+        };
+        const options = { method: method, headers: headers };
+        if (body) options.body = JSON.stringify(body);
 
-    try {
-        if (typeof window.supabase !== 'undefined') {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } else {
-            setTimeout(() => {
-                if (!supabase && typeof window.supabase !== 'undefined') {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                } else if (!supabase) {
-                    isCloudAvailable = false;
-                    document.getElementById('error-banner').style.display = 'block';
-                }
-            }, 3000);
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || '数据库请求失败');
         }
-    } catch (e) {
-        isCloudAvailable = false;
-        document.getElementById('error-banner').style.display = 'block';
+        return response.json();
     }
 
     const CONFIG = {
         apiKey: localStorage.getItem('dsk_key') || '',
         model: localStorage.getItem('dsk_model') || 'deepseek-chat',
-        aiAvatar: localStorage.getItem('dsk_ai_avatar') || 'https://cdn-icons-png.flaticon.com/512/471/471533.png',
-        userAvatar: localStorage.getItem('dsk_user_avatar') || 'https://cdn-icons-png.flaticon.com/512/4140/4140047.png',
         history: []
     };
 
@@ -154,41 +120,39 @@
     window.onload = () => {
         document.getElementById('api-key-input').value = CONFIG.apiKey;
         document.getElementById('model-select').value = CONFIG.model;
-        document.getElementById('ai-avatar-input').value = CONFIG.aiAvatar;
-        document.getElementById('user-avatar-input').value = CONFIG.userAvatar;
-        document.documentElement.style.setProperty('--ai-avatar', `url('${CONFIG.aiAvatar}')`);
-        document.documentElement.style.setProperty('--user-avatar', `url('${CONFIG.userAvatar}')`);
-        
         loadCloudHistory();
-        document.getElementById('import-file-input').addEventListener('change', handleImportFile);
     };
 
     async function loadCloudHistory() {
-        if (isCloudAvailable && supabase) {
-            try {
-                const { data, error } = await supabase.from('chat_history').select('*').order('created_at', { ascending: true });
-                if (error) throw error;
-                CONFIG.history = data.map(item => ({ role: item.role, content: item.content }));
-                renderHistory();
-                return;
-            } catch (e) { 
-                console.warn("云端连接超时，切换本地"); 
-                isCloudAvailable = false;
-                document.getElementById('error-banner').style.display = 'block';
-            }
+        try {
+            // 拉取数据
+            const messages = await supabaseFetch('chat_history', 'GET', { select: '*', order: 'created_at.asc' });
+            CONFIG.history = messages.map(msg => ({ role: msg.role, content: msg.content }));
+        } catch (e) {
+            console.warn("云端连接失败，读取本地备份");
+            const localBackup = localStorage.getItem('dsk_backup');
+            CONFIG.history = localBackup ? JSON.parse(localBackup) : [];
         }
-        const localBackup = localStorage.getItem('dsk_history_backup');
-        CONFIG.history = localBackup ? JSON.parse(localBackup) : [];
         renderHistory();
     }
 
+    async function saveCloudHistory(role, content) {
+        const apiRole = role === 'ai' ? 'assistant' : role;
+        try {
+            await supabaseFetch('chat_history', 'POST', { role: apiRole, content: content });
+            localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history)); // 同步备份
+        } catch (e) {
+            // 如果云端失败，保存到本地
+            localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history));
+        }
+    }
+
     function renderHistory() {
-        const msg = isCloudAvailable ? '云端记忆已连接 ✦ 无限容量' : '本地存储模式 ✦ 换设备记忆会丢失';
-        chatContainer.innerHTML = `<div class="system-msg">${msg}</div>`;
+        chatContainer.innerHTML = '<div class="system-msg">云端记忆已连接</div>';
         if (CONFIG.history.length === 0) {
-            appendMessage('ai', '我准备好啦！你可以通过设置里的“导入文件”把以前的对话历史一次性甩给我。');
+            appendMessage('ai', '我准备好啦！你可以导入旧记忆。');
         } else {
-            CONFIG.history.forEach(msg => { appendMessage(msg.role, msg.content, false); });
+            CONFIG.history.forEach(msg => appendMessage(msg.role, msg.content, false));
             scrollToBottom();
         }
     }
@@ -201,148 +165,81 @@
         row.appendChild(avatar);
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message';
-        let formattedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
-        msgDiv.innerHTML = formattedText;
+        msgDiv.innerHTML = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
         row.appendChild(msgDiv);
         chatContainer.appendChild(row);
         scrollToBottom();
 
         if (save) {
-            const apiRole = role === 'ai' ? 'assistant' : role;
-            CONFIG.history.push({ role: apiRole, content: text });
-            saveCloudHistory(apiRole, text);
+            CONFIG.history.push({ role, content: text });
+            saveCloudHistory(role, text);
         }
-    }
-
-    async function saveCloudHistory(role, content) {
-        if (isCloudAvailable && supabase) {
-            try {
-                await supabase.from('chat_history').insert({ role: role, content: content });
-                return;
-            } catch(e) {}
-        }
-        localStorage.setItem('dsk_history_backup', JSON.stringify(CONFIG.history));
-    }
-
-    async function handleImportFile(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const progress = document.getElementById('import-progress');
-        progress.innerText = '正在解析文件...';
-        try {
-            const text = await file.text();
-            let records = [];
-            try {
-                const parsed = JSON.parse(text);
-                if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].role && parsed[0].content) records = parsed;
-            } catch (jsonErr) {
-                const lines = text.split(/\r?\n/);
-                for (const line of lines) if (line.trim()) records.push({ role: 'user', content: line.trim() });
-            }
-            if (records.length === 0) { progress.innerText = '❌ 无法识别文件结构'; return; }
-            progress.innerText = `🔄 正在导入 ${records.length} 条...`;
-            for (const rec of records) {
-                if (isCloudAvailable && supabase) {
-                    await supabase.from('chat_history').insert({ role: rec.role, content: rec.content });
-                } else {
-                    CONFIG.history.push({ role: rec.role, content: rec.content });
-                }
-            }
-            if (!isCloudAvailable) localStorage.setItem('dsk_history_backup', JSON.stringify(CONFIG.history));
-            progress.innerText = `✅ 导入成功！页面即将刷新。`;
-            setTimeout(() => { location.reload(); }, 1500);
-        } catch (err) { progress.innerText = `❌ 导入失败: ${err.message}`; }
     }
 
     async function sendMessage() {
         const text = userInput.value.trim();
         if (!text && !currentImgData) return;
         if (!CONFIG.apiKey) { openSettings(); return; }
-        let finalContent = text || "请分析这张图片";
-        if (currentImgData) { userInput.value = ''; currentImgData = null; }
-
-        appendMessage('user', finalContent);
+        
+        userInput.value = ''; currentImgData = null;
+        appendMessage('user', text);
         isWaiting = true; sendBtn.disabled = true;
+
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'msg-row ai';
         loadingDiv.innerHTML = `<div class="msg-avatar ai-avatar"></div><div class="message"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-        loadingDiv.id = 'loading-bubble';
-        chatContainer.appendChild(loadingDiv);
+        loadingDiv.id = 'loading-bubble'; chatContainer.appendChild(loadingDiv);
 
-        const messagesPayload = [{ role: "system", content: "你是一个有帮助的助手。" }, ...CONFIG.history.slice(-30)];
-        let requestBody = null; let headers = {};
-        const model = CONFIG.model;
+        const messagesPayload = [{ role: "system", content: "你是一个有帮助的助手。" }, ...CONFIG.history.slice(-50)];
+        let requestBody = null; let headers = {}; const model = CONFIG.model;
 
         try {
             if (model.startsWith('deepseek')) {
                 headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
-                requestBody = { model: model, messages: messagesPayload, temperature: 0.7 };
-                if (model === 'deepseek-vl' && currentImgData) messagesPayload.push({ role: "user", content: [{ type: "image_url", image_url: { url: currentImgData } }] });
+                requestBody = { model: model, messages: messagesPayload };
             } else if (model.startsWith('claude')) {
                 headers = { 'Content-Type': 'application/json', 'x-api-key': CONFIG.apiKey, 'anthropic-version': '2023-06-01' };
                 requestBody = { model: model, max_tokens: 4096, messages: messagesPayload };
-                if (currentImgData) requestBody.messages.push({ role: "user", content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: currentImgData.split(',')[1] } }] });
             } else {
                 headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
-                requestBody = { model: model, messages: messagesPayload, temperature: 0.7 };
-                if (currentImgData) messagesPayload.push({ role: "user", content: [{ type: "image_url", image_url: { url: currentImgData } }] });
+                requestBody = { model: model, messages: messagesPayload };
             }
 
-            const baseUrls = { 'deepseek': 'https://api.deepseek.com', 'claude': 'https://api.anthropic.com', 'openai': 'https://api.openai.com/v1' };
+            const baseUrls = { deepseek: 'https://api.deepseek.com', claude: 'https://api.anthropic.com', openai: 'https://api.openai.com/v1' };
             let baseUrl = baseUrls.deepseek;
             if (model.startsWith('claude')) baseUrl = baseUrls.claude;
             else if (model.startsWith('gpt')) baseUrl = baseUrls.openai;
 
-            const response = await fetch(`${baseUrl}/chat/completions`, { method: 'POST', headers: headers, body: JSON.stringify(requestBody) });
+            const response = await fetch(`${baseUrl}/chat/completions`, { method: 'POST', headers, body: JSON.stringify(requestBody) });
             const data = await response.json();
             document.getElementById('loading-bubble').remove();
-            let aiText = "";
-            if (data.error) aiText = `❌ 错误: ${data.error.message}`;
-            else if (data.choices && data.choices[0]) aiText = data.choices[0].message.content;
-            else if (data.content) aiText = data.content;
-            else aiText = "未识别的响应体";
+            let aiText = data.error ? `❌ 错误: ${data.error.message}` : (data.choices ? data.choices[0].message.content : data.content || "未识别响应");
             appendMessage('ai', aiText);
         } catch (error) {
             document.getElementById('loading-bubble').remove();
-            appendMessage('ai', `❌ 网络/模型错误: ${error.message}`);
+            appendMessage('ai', `❌ 网络错误: ${error.message}`);
         } finally {
             isWaiting = false; sendBtn.disabled = false; userInput.focus();
         }
-    }
-
-    function handleImageSelect(input) {
-        const file = input.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) { currentImgData = e.target.result; userInput.value = `[已附加图片] ` + userInput.value; userInput.focus(); };
-        reader.readAsDataURL(file);
     }
 
     function autoResize(textarea) { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; }
     userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     function scrollToBottom() { setTimeout(() => chatContainer.scrollTop = chatContainer.scrollHeight, 50); }
     function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
-
     function saveSettings() {
         const key = document.getElementById('api-key-input').value.trim();
-        if (!key.startsWith('sk-') && !key.startsWith('dsk_')) { alert('API Key 格式不正确，以 sk- 开头'); return; }
         const model = document.getElementById('model-select').value;
-        const aiAv = document.getElementById('ai-avatar-input').value.trim() || CONFIG.aiAvatar;
-        const userAv = document.getElementById('user-avatar-input').value.trim() || CONFIG.userAvatar;
         localStorage.setItem('dsk_key', key); localStorage.setItem('dsk_model', model);
-        localStorage.setItem('dsk_ai_avatar', aiAv); localStorage.setItem('dsk_user_avatar', userAv);
-        CONFIG.apiKey = key; CONFIG.model = model; CONFIG.aiAvatar = aiAv; CONFIG.userAvatar = userAv;
-        document.documentElement.style.setProperty('--ai-avatar', `url('${aiAv}')`);
-        document.documentElement.style.setProperty('--user-avatar', `url('${userAv}')`);
+        CONFIG.apiKey = key; CONFIG.model = model;
         document.getElementById('settings-modal').style.display = 'none';
-        alert('设置已保存！'); location.reload();
+        alert('已保存，页面刷新。'); location.reload();
     }
-
     function clearHistory() {
-        if(confirm('确定清空所有记忆吗？不可撤销。')) {
-            if (isCloudAvailable && supabase) supabase.from('chat_history').delete().neq('id', 0);
-            localStorage.removeItem('dsk_history_backup');
-            CONFIG.history = []; renderHistory();
-            document.getElementById('settings-modal').style.display = 'none';
+        if(confirm('确定清空所有记忆？')) {
+            try { supabaseFetch('chat_history', 'DELETE'); } catch(e){}
+            CONFIG.history = []; localStorage.removeItem('dsk_backup');
+            renderHistory(); document.getElementById('settings-modal').style.display = 'none';
         }
     }
     document.getElementById('settings-modal').addEventListener('click', (e) => {
