@@ -200,27 +200,21 @@
         if (save) { CONFIG.history.push({ role, content: text }); saveCloudHistory(role, text); }
     }
 
-    // === 上传图片 ===
     function handleImageSelect(input) {
         const file = input.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) { 
             currentImgData = e.target.result; 
-            userInput.focus(); 
-            // 这里可以弹个 toast，但我不用 popup，直接给出触觉反馈
+            // 不会在输入框里强塞任何文字，保持输入框原样
         };
         reader.readAsDataURL(file);
     }
 
-    // === 上传文件（静默后台读取） ===
     function handleFileSelect(input) {
         const file = input.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
-            pendingFileContent = e.target.result; // 存入后台，不显示在输入框
-            // 触发一次 AI 发送（如果输入框为空，只发文件；如果有字，发文件+字）
-            userInput.focus();
-            // 可选：弹一个极简的提示
+            pendingFileContent = e.target.result; 
             userInput.placeholder = "📄 文件已读取，点击发送";
             setTimeout(() => { userInput.placeholder = "输入消息..."; }, 2000);
         };
@@ -229,25 +223,35 @@
 
     async function sendMessage() {
         let text = userInput.value.trim();
-        // 如果后台有文件数据，拼接到用户输入里，实现“静默发送”
         if (pendingFileContent) {
             text = pendingFileContent + (text ? '\n\n' + text : '');
             pendingFileContent = null;
             userInput.placeholder = "输入消息...";
         }
+        // 如果既没图也没文件也没字，直接停止
         if (!text && !currentImgData) return;
         if (!CONFIG.apiKey) { openSettings(); return; }
-        
-        // 如果有图片，文字是 "分析图片" 也可
-        let finalContent = text || "请分析这张图片";
+
+        // 修正结构：有图片时，不做文字的强制填充
         let hasImg = currentImgData !== null;
-        if (hasImg) { 
-            userInput.value = ''; 
+        
+        // 用户的输入框原本打什么，就发送什么
+        let finalContent = text || "";
+        if (hasImg && !finalContent) {
+            // 如果只有图没有字，给图片配一个空文本
+            finalContent = "";
+        }
+
+        // 清空输入区域
+        userInput.value = ''; 
+
+        // 【关键修改 1】：让图片和文字保持“原样”发送，不偷偷加字
+        if (hasImg) {
+            appendMessage('user', `[图片附件] ${finalContent || ''}`.trim());
         } else {
-            userInput.value = ''; 
+            appendMessage('user', finalContent);
         }
         
-        appendMessage('user', finalContent);
         isWaiting = true; sendBtn.disabled = true;
 
         const loadingDiv = document.createElement('div');
@@ -255,46 +259,54 @@
         loadingDiv.innerHTML = `<div class="msg-avatar ai-avatar"></div><div class="message"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
         loadingDiv.id = 'loading-bubble'; chatContainer.appendChild(loadingDiv);
 
-        // 处理历史记录
         const historyForApi = CONFIG.history.slice(-50).map(m => ({
             role: m.role === 'ai' ? 'assistant' : m.role, content: m.content
         }));
         const messagesPayload = [{ role: "system", content: "你是一个有帮助的助手。" }, ...historyForApi];
-        
-        // 如果携带图片，注入多模态内容
-        if (hasImg) {
-             messagesPayload.push({ 
-                 role: "user", 
-                 content: [{ type: "text", text: finalContent }, { type: "image_url", image_url: { url: currentImgData } }]
-             });
-             currentImgData = null;
-        }
 
         let requestBody = null; let headers = {}; 
         let model = CONFIG.model;
         if (model === 'custom') model = CONFIG.customModel || 'deepseek-chat';
 
+        // 【关键修改 2】：为 DeepSeek VL 构建标准的结构，彻底解决反序列化错误
         try {
-            // 根据模型适配接口
             if (model.startsWith('deepseek') || model.startsWith('dsv')) {
                 headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
+                
+                let userMsgContent = [];
+                if (hasImg) {
+                    userMsgContent.push({ type: "image_url", image_url: { url: currentImgData } });
+                    if (finalContent) {
+                        userMsgContent.push({ type: "text", text: finalContent });
+                    }
+                    messagesPayload.push({ role: "user", content: userMsgContent });
+                } else {
+                    messagesPayload.push({ role: "user", content: finalContent });
+                }
                 requestBody = { model: model, messages: messagesPayload };
             } else if (model.startsWith('claude')) {
                 headers = { 'Content-Type': 'application/json', 'x-api-key': CONFIG.apiKey, 'anthropic-version': '2023-06-01' };
-                // Claude 需处理图片的格式切换
-                requestBody = { model: model, max_tokens: 4096, messages: messagesPayload };
                 if (hasImg) {
-                    requestBody.messages.push({ 
-                        role: "user", 
-                        content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: currentImgData.split(',')[1] } }]
-                    });
-                    currentImgData = null;
+                    const claudeParts = [];
+                    if (finalContent) claudeParts.push({ type: "text", text: finalContent });
+                    claudeParts.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: currentImgData.split(',')[1] } });
+                    messagesPayload.push({ role: "user", content: claudeParts });
+                } else {
+                    messagesPayload.push({ role: "user", content: finalContent });
                 }
+                requestBody = { model: model, max_tokens: 4096, messages: messagesPayload };
             } else {
                 headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
+                if (hasImg) {
+                    messagesPayload.push({ role: "user", content: [{ type: "text", text: finalContent }, { type: "image_url", image_url: { url: currentImgData } }] });
+                } else {
+                    messagesPayload.push({ role: "user", content: finalContent });
+                }
                 requestBody = { model: model, messages: messagesPayload };
             }
             
+            if (hasImg) currentImgData = null;
+
             const baseUrls = { deepseek: 'https://api.deepseek.com', claude: 'https://api.anthropic.com', openai: 'https://api.openai.com/v1' };
             let baseUrl = baseUrls.deepseek;
             if (model.startsWith('claude')) baseUrl = baseUrls.claude;
