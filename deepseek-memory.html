@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DeepSeek 记忆助手</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --chat-bg: #2d2d2d;
+            --user-msg-bg: #007AFF;
+            --ai-msg-bg: #3a3a3a;
+            --text-color: #ffffff;
+            --sub-text: #a0a0a0;
+            --border-radius: 18px;
+            --input-bg: #333333;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            padding: 15px;
+            background-color: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        h1 { margin: 0; font-size: 18px; font-weight: 600; }
+        
+        .header-btn {
+            background: none;
+            border: none;
+            color: var(--user-msg-bg);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Chat Area */
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .user-msg {
+            align-self: flex-end;
+            background-color: var(--user-msg-bg);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-msg {
+            align-self: flex-start;
+            background-color: var(--ai-msg-bg);
+            color: #eee;
+            border-bottom-left-radius: 4px;
+        }
+
+        .system-msg {
+            align-self: center;
+            font-size: 12px;
+            color: var(--sub-text);
+            margin: 10px 0;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 10px;
+            border-radius: 10px;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 15px;
+            background-color: var(--bg-color);
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        textarea {
+            flex: 1;
+            background-color: var(--input-bg);
+            border: 1px solid #444;
+            border-radius: 20px;
+            padding: 10px 15px;
+            color: white;
+            font-size: 16px;
+            resize: none;
+            max-height: 120px;
+            min-height: 44px;
+            line-height: 24px;
+        }
+
+        textarea::placeholder { color: #666; }
+
+        #send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: var(--user-msg-bg);
+            border: none;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #send-btn:active { transform: scale(0.9); }
+        #send-btn:disabled { background-color: #555; cursor: not-allowed; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--chat-bg);
+            padding: 20px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .modal h2 { margin-top: 0; font-size: 18px; }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; font-size: 14px; color: var(--sub-text); }
+        .input-group input { 
+            width: 100%; padding: 10px; border-radius: 8px; 
+            border: 1px solid #444; background: #222; color: white; 
+        }
+
+        .save-btn {
+            width: 100%; padding: 12px; background: var(--user-msg-bg);
+            color: white; border: none; border-radius: 8px; font-size: 16px;
+        }
+
+        /* Loading Indicator */
+        .typing-indicator { display: flex; gap: 4px; padding: 5px 0; }
+        .dot { width: 8px; height: 8px; background: #888; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>DeepSeek <span style="font-weight:400; font-size:14px; color:#aaa;">记忆版</span></h1>
+    <button class="header-btn" onclick="openSettings()">⚙️ 设置</button>
+</header>
+
+<div id="chat-container">
+    <div class="system-msg">记忆库已连接 • 本地存储安全</div>
+    <!-- 消息会动态插入这里 -->
+</div>
+
+<div class="input-area">
+    <textarea id="user-input" placeholder="输入消息..." rows="1" oninput="autoResize(this)"></textarea>
+    <button id="send-btn" onclick="sendMessage()">➤</button>
+</div>
+
+<!-- API Key 设置弹窗 -->
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+        <h2>配置 DeepSeek</h2>
+        <div class="input-group">
+            <label>API Key (仅保存在本地)</label>
+            <input type="password" id="api-key-input" placeholder="sk-...">
+        </div>
+        <div class="input-group">
+            <label>系统提示词 (可选)</label>
+            <input type="text" id="system-prompt-input" value="你是一个有帮助的助手。">
+        </div>
+        <button class="save-btn" onclick="saveSettings()">保存并重载</button>
+        <div style="text-align:center; margin-top:10px;">
+            <a href="#" onclick="clearHistory()" style="color:#ff4444; font-size:12px; text-decoration:none;">清空所有记忆</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 状态管理 ---
+    const CONFIG = {
+        apiKey: localStorage.getItem('deepseek_key') || '',
+        systemPrompt: localStorage.getItem('deepseek_system') || '你是一个有帮助的助手。',
+        history: JSON.parse(localStorage.getItem('deepseek_history') || '[]')
+    };
+
+    const chatContainer = document.getElementById('chat-container');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    let isWaiting = false;
+
+    // --- 初始化 ---
+    window.onload = () => {
+        if (!CONFIG.apiKey) {
+            openSettings();
+        } else {
+            document.getElementById('api-key-input').value = CONFIG.apiKey;
+            document.getElementById('system-prompt-input').value = CONFIG.systemPrompt;
+            // 自动加载历史记录显示在界面上
+            renderHistory();
+        }
+    };
+
+    // --- 记忆与渲染 ---
+    function renderHistory() {
+        chatContainer.innerHTML = '<div class="system-msg">记忆库已连接 • 本地存储安全</div>';
+        if (CONFIG.history.length === 0) {
+            // 如果没有历史，显示欢迎语
+            appendMessage('ai', `你好！我是你的 DeepSeek 助手。我已经准备好记住我们的对话了。`);
+        } else {
+            // 渲染最近的历史（为了性能，如果太多可以只渲染最后N条，但这里为了记忆完整性全部渲染）
+            CONFIG.history.forEach(msg => {
+                appendMessage(msg.role, msg.content, false);
+            });
+            scrollToBottom();
+        }
+    }
+
+    function appendMessage(role, text, save = true) {
+        const div = document.createElement('div');
+        div.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
+        
+        // 简单处理 Markdown 代码块 (纯文本展示，保留缩进)
+        let formattedText = text
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\n/g, '<br>');
+        
+        div.innerHTML = formattedText;
+        chatContainer.appendChild(div);
+        scrollToBottom();
+
+        if (save) {
+            CONFIG.history.push({ role, content: text });
+            localStorage.setItem('deepseek_history', JSON.stringify(CONFIG.history));
+        }
+    }
+
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // --- 核心逻辑 ---
+    async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text || isWaiting) return;
+
+        if (!CONFIG.apiKey) {
+            openSettings();
+            return;
+        }
+
+        // 1. 用户上屏
+        userInput.value = '';
+        userInput.style.height = 'auto';
+        appendMessage('user', text);
+        
+        // 2. 显示思考状态
+        isWaiting = true;
+        sendBtn.disabled = true;
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message ai-msg';
+        loadingDiv.innerHTML = `<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+        loadingDiv.id = 'loading-bubble';
+        chatContainer.appendChild(loadingDiv);
+        scrollToBottom();
+
+        // 3. 准备上下文 (记忆机制)
+        // 这里我们将所有历史记录作为上下文发送，实现“完全记忆”。
+        // 实际生产中可能需要做摘要，但对于个人轻量使用，直接发送上下文效果最好。
+        const 
