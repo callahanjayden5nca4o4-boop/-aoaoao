@@ -24,8 +24,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            /* 核心修改：用 100dvh 代替 100vh，完美避开手机底部地址栏 */
-            height: 100dvh; 
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -101,7 +100,7 @@
             border-radius: 10px;
         }
 
-        /* Input Area - 增加了底部安全距离，确保在刘海屏/地址栏下也能看见 */
+        /* Input Area */
         .input-area {
             padding: 15px 15px calc(15px + env(safe-area-inset-bottom));
             background-color: var(--bg-color);
@@ -260,6 +259,7 @@
 
     function appendMessage(role, text, save = true) {
         const div = document.createElement('div');
+        // 界面样式，保留 ai-msg 用于显示 AI 的气泡
         div.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
         let formattedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
         div.innerHTML = formattedText;
@@ -267,7 +267,9 @@
         scrollToBottom();
 
         if (save) {
-            CONFIG.history.push({ role, content: text });
+            // 核心修复：如果是 ai，存入本地记忆时强制改成 assistant，否则 DeepSeek API 会报错
+            const apiRole = role === 'ai' ? 'assistant' : role;
+            CONFIG.history.push({ role: apiRole, content: text });
             localStorage.setItem('deepseek_history', JSON.stringify(CONFIG.history));
         }
     }
