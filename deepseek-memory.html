@@ -24,7 +24,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            height: 100vh;
+            /* 核心修改：用 100dvh 代替 100vh，完美避开手机底部地址栏 */
+            height: 100dvh; 
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -100,7 +101,7 @@
             border-radius: 10px;
         }
 
-        /* Input Area - 增加了底部安全距离防止被浏览器遮挡 */
+        /* Input Area - 增加了底部安全距离，确保在刘海屏/地址栏下也能看见 */
         .input-area {
             padding: 15px 15px calc(15px + env(safe-area-inset-bottom));
             background-color: var(--bg-color);
