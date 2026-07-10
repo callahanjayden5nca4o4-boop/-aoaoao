@@ -100,9 +100,9 @@
             border-radius: 10px;
         }
 
-        /* Input Area */
+        /* Input Area - 增加了底部安全距离防止被浏览器遮挡 */
         .input-area {
-            padding: 15px;
+            padding: 15px 15px calc(15px + env(safe-area-inset-bottom));
             background-color: var(--bg-color);
             border-top: 1px solid #333;
             display: flex;
