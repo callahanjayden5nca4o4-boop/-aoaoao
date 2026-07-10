@@ -42,11 +42,11 @@
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; font-size: 14px; color: var(--sub-text); }
         .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: var(--input-bg); color: var(--text-color); }
+        #custom-model-group { display: none; }
         .save-btn { width: 100%; padding: 12px; background: var(--user-msg-bg); color: white; border: none; border-radius: 8px; font-size: 16px; }
         .warning-text { color: #ff4444; font-size: 12px; text-decoration: none; display: block; text-align: center; margin-top: 10px; cursor: pointer; }
         .dot { width: 8px; height: 8px; background: #888; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; display: inline-block; margin: 0 2px; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-        #import-progress { margin-top: 10px; font-size: 12px; color: var(--sub-text); text-align: center; }
         #error-banner { display: block; text-align: center; padding: 8px; background-color: #ff4444; color: white; font-size: 12px; font-weight: bold; display: none; }
     </style>
 </head>
@@ -59,13 +59,10 @@
 <div id="chat-container"><div class="system-msg">正在连接记忆...</div></div>
 <div class="input-area">
     <div class="input-actions">
-        <!-- 图片上传 -->
         <button class="attach-btn" onclick="document.getElementById('img-input').click()">📎</button>
         <input type="file" id="img-input" accept="image/*" style="display:none" onchange="handleImageSelect(this)">
-        
-        <!-- 新增文件上传 (支持txt/json) -->
         <button class="attach-btn" onclick="document.getElementById('file-input').click()">📄</button>
-        <input type="file" id="file-input" accept=".txt,.json,.md,.log" style="display:none" onchange="handleFileSelect(this)">
+        <input type="file" id="file-input" accept=".txt,.md,.json,.log" style="display:none" onchange="handleFileSelect(this)">
     </div>
     <textarea id="user-input" placeholder="输入消息..." rows="1" oninput="autoResize(this)"></textarea>
     <button id="send-btn" onclick="sendMessage()">➤</button>
@@ -76,14 +73,18 @@
         <h2>⚙️ 配置小窝</h2>
         <div class="input-group"><label>API Key</label><input type="password" id="api-key-input" placeholder="sk-..."></div>
         <div class="input-group"><label>选择模型</label>
-            <select id="model-select">
+            <select id="model-select" onchange="toggleCustomModel()">
                 <option value="deepseek-chat">DeepSeek Chat</option>
                 <option value="deepseek-vl">DeepSeek VL</option>
                 <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
                 <option value="gpt-4o">GPT-4o</option>
+                <option value="custom">自定义模型名</option>
             </select>
         </div>
-        <!-- 补全了头像设置框 -->
+        <div class="input-group" id="custom-model-group">
+            <label>输入自定义模型名称</label>
+            <input type="text" id="custom-model-input" placeholder="例如: dsv4, gpt-4-turbo">
+        </div>
         <div class="input-group"><label>AI 头像链接</label><input type="text" id="ai-avatar-input" placeholder="https://...png"></div>
         <div class="input-group"><label>我的头像链接</label><input type="text" id="user-avatar-input" placeholder="https://...png"></div>
         <button class="save-btn" onclick="saveSettings()">保存并刷新</button>
@@ -95,7 +96,6 @@
     const SUPABASE_URL = 'https://ryzvndxjxbwpvsvbvuae.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5enZuZHhqeGJ3cHZzdmJ2dWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjI5NjUsImV4cCI6MjA5OTIzODk2NX0.eEKzXbO5CPNYIrNLk_jOnD3YcyF7yFmWQs80RN41g0o';
 
-    // 带超时的 fetch
     async function fetchWithTimeout(url, options, timeout = 8000) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -123,6 +123,7 @@
     const CONFIG = {
         apiKey: localStorage.getItem('dsk_key') || '',
         model: localStorage.getItem('dsk_model') || 'deepseek-chat',
+        customModel: localStorage.getItem('dsk_custom_model') || '',
         aiAvatar: localStorage.getItem('dsk_ai_avatar') || 'https://cdn-icons-png.flaticon.com/512/471/471533.png',
         userAvatar: localStorage.getItem('dsk_user_avatar') || 'https://cdn-icons-png.flaticon.com/512/4140/4140047.png',
         history: []
@@ -133,13 +134,21 @@
     const sendBtn = document.getElementById('send-btn');
     let isWaiting = false;
     let currentImgData = null;
+    let pendingFileContent = null;
     let isCloudConnected = true;
+
+    function toggleCustomModel() {
+        const select = document.getElementById('model-select');
+        document.getElementById('custom-model-group').style.display = select.value === 'custom' ? 'block' : 'none';
+    }
 
     window.onload = () => {
         document.getElementById('api-key-input').value = CONFIG.apiKey;
         document.getElementById('model-select').value = CONFIG.model;
+        document.getElementById('custom-model-input').value = CONFIG.customModel;
         document.getElementById('ai-avatar-input').value = CONFIG.aiAvatar;
         document.getElementById('user-avatar-input').value = CONFIG.userAvatar;
+        toggleCustomModel();
         document.documentElement.style.setProperty('--ai-avatar', `url('${CONFIG.aiAvatar}')`);
         document.documentElement.style.setProperty('--user-avatar', `url('${CONFIG.userAvatar}')`);
         loadCloudHistory();
@@ -191,12 +200,54 @@
         if (save) { CONFIG.history.push({ role, content: text }); saveCloudHistory(role, text); }
     }
 
+    // === 上传图片 ===
+    function handleImageSelect(input) {
+        const file = input.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) { 
+            currentImgData = e.target.result; 
+            userInput.focus(); 
+            // 这里可以弹个 toast，但我不用 popup，直接给出触觉反馈
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // === 上传文件（静默后台读取） ===
+    function handleFileSelect(input) {
+        const file = input.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            pendingFileContent = e.target.result; // 存入后台，不显示在输入框
+            // 触发一次 AI 发送（如果输入框为空，只发文件；如果有字，发文件+字）
+            userInput.focus();
+            // 可选：弹一个极简的提示
+            userInput.placeholder = "📄 文件已读取，点击发送";
+            setTimeout(() => { userInput.placeholder = "输入消息..."; }, 2000);
+        };
+        reader.readAsText(file);
+    }
+
     async function sendMessage() {
-        const text = userInput.value.trim();
+        let text = userInput.value.trim();
+        // 如果后台有文件数据，拼接到用户输入里，实现“静默发送”
+        if (pendingFileContent) {
+            text = pendingFileContent + (text ? '\n\n' + text : '');
+            pendingFileContent = null;
+            userInput.placeholder = "输入消息...";
+        }
         if (!text && !currentImgData) return;
         if (!CONFIG.apiKey) { openSettings(); return; }
-        userInput.value = ''; currentImgData = null;
-        appendMessage('user', text);
+        
+        // 如果有图片，文字是 "分析图片" 也可
+        let finalContent = text || "请分析这张图片";
+        let hasImg = currentImgData !== null;
+        if (hasImg) { 
+            userInput.value = ''; 
+        } else {
+            userInput.value = ''; 
+        }
+        
+        appendMessage('user', finalContent);
         isWaiting = true; sendBtn.disabled = true;
 
         const loadingDiv = document.createElement('div');
@@ -204,23 +255,46 @@
         loadingDiv.innerHTML = `<div class="msg-avatar ai-avatar"></div><div class="message"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
         loadingDiv.id = 'loading-bubble'; chatContainer.appendChild(loadingDiv);
 
+        // 处理历史记录
         const historyForApi = CONFIG.history.slice(-50).map(m => ({
             role: m.role === 'ai' ? 'assistant' : m.role, content: m.content
         }));
         const messagesPayload = [{ role: "system", content: "你是一个有帮助的助手。" }, ...historyForApi];
-        let requestBody = null; let headers = {}; const model = CONFIG.model;
+        
+        // 如果携带图片，注入多模态内容
+        if (hasImg) {
+             messagesPayload.push({ 
+                 role: "user", 
+                 content: [{ type: "text", text: finalContent }, { type: "image_url", image_url: { url: currentImgData } }]
+             });
+             currentImgData = null;
+        }
+
+        let requestBody = null; let headers = {}; 
+        let model = CONFIG.model;
+        if (model === 'custom') model = CONFIG.customModel || 'deepseek-chat';
 
         try {
-            if (model.startsWith('deepseek')) {
+            // 根据模型适配接口
+            if (model.startsWith('deepseek') || model.startsWith('dsv')) {
                 headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
                 requestBody = { model: model, messages: messagesPayload };
             } else if (model.startsWith('claude')) {
                 headers = { 'Content-Type': 'application/json', 'x-api-key': CONFIG.apiKey, 'anthropic-version': '2023-06-01' };
+                // Claude 需处理图片的格式切换
                 requestBody = { model: model, max_tokens: 4096, messages: messagesPayload };
+                if (hasImg) {
+                    requestBody.messages.push({ 
+                        role: "user", 
+                        content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: currentImgData.split(',')[1] } }]
+                    });
+                    currentImgData = null;
+                }
             } else {
                 headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
                 requestBody = { model: model, messages: messagesPayload };
             }
+            
             const baseUrls = { deepseek: 'https://api.deepseek.com', claude: 'https://api.anthropic.com', openai: 'https://api.openai.com/v1' };
             let baseUrl = baseUrls.deepseek;
             if (model.startsWith('claude')) baseUrl = baseUrls.claude;
@@ -240,27 +314,6 @@
         } finally { isWaiting = false; sendBtn.disabled = false; userInput.focus(); }
     }
 
-    // === 上传图片 ===
-    function handleImageSelect(input) {
-        const file = input.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) { currentImgData = e.target.result; userInput.value = `[已附加图片] ` + userInput.value; userInput.focus(); };
-        reader.readAsDataURL(file);
-    }
-
-    // === 新增：上传文件 ===
-    function handleFileSelect(input) {
-        const file = input.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const content = e.target.result;
-            userInput.value = `[📄 已读文件: ${file.name}]\n` + content.substring(0, 3000) + (content.length > 3000 ? "\n... (内容过长已截断)" : "");
-            userInput.focus();
-            // 如果文件很大，使用截断内容，防止超长。DeepSeek 上下文长，但防抖动。
-        };
-        reader.readAsText(file);
-    }
-
     function autoResize(textarea) { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; }
     userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     function scrollToBottom() { setTimeout(() => chatContainer.scrollTop = chatContainer.scrollHeight, 50); }
@@ -268,15 +321,18 @@
     function saveSettings() {
         const key = document.getElementById('api-key-input').value.trim();
         const model = document.getElementById('model-select').value;
+        const customModel = document.getElementById('custom-model-input').value.trim();
         const aiAv = document.getElementById('ai-avatar-input').value.trim() || CONFIG.aiAvatar;
         const userAv = document.getElementById('user-avatar-input').value.trim() || CONFIG.userAvatar;
         localStorage.setItem('dsk_key', key); localStorage.setItem('dsk_model', model);
+        localStorage.setItem('dsk_custom_model', customModel);
         localStorage.setItem('dsk_ai_avatar', aiAv); localStorage.setItem('dsk_user_avatar', userAv);
-        CONFIG.apiKey = key; CONFIG.model = model; CONFIG.aiAvatar = aiAv; CONFIG.userAvatar = userAv;
+        CONFIG.apiKey = key; CONFIG.model = model; CONFIG.customModel = customModel; 
+        CONFIG.aiAvatar = aiAv; CONFIG.userAvatar = userAv;
         document.documentElement.style.setProperty('--ai-avatar', `url('${aiAv}')`);
         document.documentElement.style.setProperty('--user-avatar', `url('${userAv}')`);
         document.getElementById('settings-modal').style.display = 'none';
-        alert('已保存，页面刷新。'); location.reload();
+        alert('设置已保存，页面刷新。'); location.reload();
     }
     function clearHistory() {
         if(confirm('确定清空所有记忆？')) {
