@@ -3,140 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DeepSeek 小窝</title>
+    <title>💖 小窝</title>
     <style>
+        /* 核心少女心调色盘 */
         :root {
-            --bg-color: #f0f2f5; --chat-bg: #ffffff; --user-msg-bg: #007AFF; --ai-msg-bg: #e9ecef;
-            --text-color: #1a1a1a; --sub-text: #666; --border-radius: 18px; --input-bg: #f8f9fa;
-            --header-bg: #ffffff;
+            --bg-color: #fdf3f5;        /* 整个画面的奶油粉底色 */
+            --card-bg: #ffffff;         /* 纯白卡片 */
+            --user-msg-bg: #ffb1c6;     /* 发送方的软糯甜粉色 */
+            --ai-msg-bg: #ffffff;       /* AI的干净白底色 */
+            --ai-msg-border: #ffdae2;   /* AI消息的浅粉描边 */
+            --text-color: #5a4048;      /* 柔和的深可可色字体 */
+            --sub-text: #a3828a;        /* 优雅的浅棕粉副文本 */
+            --input-bg: #ffffff;        /* 输入框纯白底色 */
+            --input-border: #ffdae2;    /* 输入框柔粉描边 */
+            --header-bg: #ffffff;       /* 顶部纯白 */
+            --shadow: 0 4px 12px rgba(200, 140, 150, 0.10);
         }
-        @media (prefers-color-scheme: dark) {
-            :root { --bg-color: #1a1a1a; --chat-bg: #2d2d2d; --ai-msg-bg: #3a3a3a; --text-color: #ffffff; --sub-text: #a0a0a0; --input-bg: #333333; --header-bg: #1a1a1a; }
+        
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        body {
+            margin: 0; padding: 0; 
+            font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            height: 100dvh; 
+            display: flex; flex-direction: column; overflow: hidden;
         }
-        * { box-sizing: border-box; outline: none; }
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-        header { padding: 15px; background-color: var(--header-bg); border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
-        h1 { margin: 0; font-size: 18px; font-weight: 600; }
-        .header-btn { background: none; border: none; color: var(--user-msg-bg); font-size: 14px; cursor: pointer; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
-        .msg-row { display: flex; align-items: flex-start; max-width: 100%; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .msg-row.user { flex-direction: row-reverse; align-self: flex-end; } .msg-row.ai { align-self: flex-start; }
-        .message { padding: 12px 16px; border-radius: var(--border-radius); font-size: 16px; line-height: 1.5; word-wrap: break-word; max-width: 70%; }
-        .msg-row.user .message { background-color: var(--user-msg-bg); color: white; border-bottom-right-radius: 4px; }
-        .msg-row.ai .message { background-color: var(--ai-msg-bg); color: var(--text-color); border-bottom-left-radius: 4px; }
-        .system-msg { align-self: center; font-size: 12px; color: var(--sub-text); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 10px; }
-        .input-area { padding: 12px 15px calc(15px + env(safe-area-inset-bottom)); background-color: var(--header-bg); border-top: 1px solid #333; display: flex; gap: 10px; align-items: center; }
-        textarea { flex: 1; min-width: 0; background-color: var(--input-bg); border: 1px solid transparent; border-radius: 20px; padding: 10px 15px; color: var(--text-color); font-size: 16px; resize: none; max-height: 120px; min-height: 44px; line-height: 24px; }
-        textarea::placeholder { color: var(--sub-text); }
-        #send-btn { width: 44px; height: 44px; border-radius: 50%; background-color: var(--user-msg-bg); border: none; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
-        .modal-content { background: var(--header-bg); padding: 24px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .modal h2 { margin-top: 0; font-size: 18px; }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 5px; font-size: 14px; color: var(--sub-text); }
-        .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: var(--input-bg); color: var(--text-color); }
-        #custom-model-group { display: none; }
-        .save-btn { width: 100%; padding: 12px; background: var(--user-msg-bg); color: white; border: none; border-radius: 8px; font-size: 16px; }
-        .warning-text { color: #ff4444; font-size: 12px; text-decoration: none; display: block; text-align: center; margin-top: 10px; cursor: pointer; }
-        .dot { width: 8px; height: 8px; background: #888; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; display: inline-block; margin: 0 2px; }
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-        #error-banner { display: block; text-align: center; padding: 8px; background-color: #ff4444; color: white; font-size: 12px; font-weight: bold; display: none; }
+        
+        /* 圆润的顶部小窝 */
+        header { 
+            padding: 16px 20px; background-color: var(--header-bg); 
+            border-bottom: 1px solid #fff0f2; display: flex; 
+            justify-content: space-between; align-items: center; z-index: 10; 
+        }
+        h1 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: 0.5px; color: #7c5a63; }
+        .header-btn { 
+            background: var(--bg-color); border: none; padding: 6px 12px;
+            border-radius: 12px; color: #a3828a; font-size: 13px; font-weight: 500; cursor: pointer;
+        }
+        
+        /* 聊天框 */
+        #chat-container { 
+            flex: 1; overflow-y: auto; padding: 20px; display: flex; 
+            flex-direction: column; gap: 20px; scroll-behavior: smooth; 
+        }
+        
+        .msg-row { display: flex; align-items: flex-start; width: 100%; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-row.user { justify-content: flex-end; }
+        .msg-row.ai { justify-content: flex-start; }
+        
+        .message { 
+            padding: 12px 18px; border-radius: 20px; font-size: 15px; line-height: 1.6; 
+            max-width: 80%; word-wrap: break-word; position: relative;
+        }
+        
+        /* 自己发的消息：甜粉色 */
+        .msg-row.user .message { 
+            background-color: var(--user-msg-bg); color: #ffffff; 
+            border-bottom-right-radius: 4px; box-shadow: var(--shadow);
+        }
+        
+        /* AI回复的消息：白底浅粉边 */
+        .msg-row.ai .message { 
+            background-color: var(--ai-msg-bg); color: var(--text-color); 
+            border: 1px solid var(--ai-msg-border); border-bottom-left-radius: 4px; 
+            box-shadow: var(--shadow);
+        }
+        
+        .system-msg { 
+            align-self: center; font-size: 12px; color: var(--sub-text); background: rgba(255,255,255,0.6); 
+            padding: 6px 14px; border-radius: 14px; backdrop-filter: blur(2px); border: 1px solid #ffedf1;
+        }
+        
+        /* 底部柔光输入区 */
+        .input-area { 
+            padding: 14px 18px calc(18px + env(safe-area-inset-bottom)); background-color: var(--header-bg); 
+            border-top: 1px solid #fff0f2; display: flex; gap: 10px; align-items: center; 
+        }
+        textarea { 
+            flex: 1; min-width: 0; background-color: var(--input-bg); 
+            border: 1px solid var(--input-border); border-radius: 24px; padding: 12px 18px; 
+            color: var(--text-color); font-size: 15px; resize: none; max-height: 120px; min-height: 44px; 
+            line-height: 24px; font-family: inherit;
+        }
+        textarea::placeholder { color: #cbb1b9; }
+        
+        #send-btn { 
+            width: 44px; height: 44px; border-radius: 50%; background-color: var(--user-msg-bg); 
+            border: none; color: white; display: flex; justify-content: center; align-items: center; 
+            cursor: pointer; flex-shrink: 0; transition: 0.1s; box-shadow: var(--shadow);
+        }
+        #send-btn:active { transform: scale(0.9); }
+        
+        /* 配置弹窗（极简风） */
+        .modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255, 230, 235, 0.5); backdrop-filter: blur(6px); z-index: 200; 
+            justify-content: center; align-items: center; padding: 20px; 
+        }
+        .modal-content { 
+            background: var(--header-bg); padding: 24px; border-radius: 24px; width: 100%; max-width: 360px; 
+            box-shadow: 0 10px 30px rgba(200, 140, 150, 0.15); border: 1px solid #ffedf1;
+        }
+        .modal h2 { margin: 0 0 16px 0; font-size: 18px; color: #7c5a63; font-weight: 500; text-align: center; }
+        .input-group { margin-bottom: 14px; }
+        .input-group label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--sub-text); }
+        .input-group input, .input-group select { 
+            width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid #ffdae2; 
+            background: #fffbfc; color: var(--text-color); font-size: 14px; font-family: inherit;
+        }
+        .save-btn { 
+            width: 100%; padding: 12px; background: var(--user-msg-bg); color: white; border: none; 
+            border-radius: 12px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 4px;
+        }
+        .warning-text { 
+            color: #d3848a; font-size: 12px; text-decoration: none; display: block; text-align: center; 
+            margin-top: 12px; cursor: pointer; 
+        }
+        
+        /* 小点动画 */
+        .dot { width: 6px; height: 6px; background: #d89ca8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; display: inline-block; margin: 0 2px; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0.6); } 40% { transform: scale(1); } }
+        #error-banner { display: block; text-align: center; padding: 6px; background-color: #ffdae2; color: #b77a84; font-size: 12px; display: none; }
     </style>
 </head>
 <body>
-<div id="error-banner">⚠️ 云端连接失败，已切换为纯本地模式</div>
+<div id="error-banner">💔 云端未连接，正在本地小窝里聊天</div>
 <header>
-    <h1>DeepSeek 小窝</h1>
-    <button class="header-btn" onclick="openSettings()">⚙️ 设置</button>
+    <h1>🏡 小窝</h1>
+    <button class="header-btn" onclick="openSettings()">🪞 装扮</button>
 </header>
-<div id="chat-container"><div class="system-msg">正在连接记忆...</div></div>
+<div id="chat-container"></div>
+
 <div class="input-area">
-    <textarea id="user-input" placeholder="输入消息..." rows="1" oninput="autoResize(this)"></textarea>
+    <textarea id="user-input" placeholder="轻轻说句话..." rows="1" oninput="autoResize(this)"></textarea>
     <button id="send-btn" onclick="sendMessage()">➤</button>
 </div>
 
 <div id="settings-modal" class="modal">
     <div class="modal-content">
-        <h2>⚙️ 配置小窝</h2>
+        <h2>✨ 小窝设置</h2>
         <div class="input-group"><label>API Key</label><input type="password" id="api-key-input" placeholder="sk-..."></div>
-        <div class="input-group"><label>选择模型</label>
-            <select id="model-select" onchange="toggleCustomModel()">
-                <option value="deepseek-chat">DeepSeek Chat</option>
+        <div class="input-group"><label>模型名字</label>
+            <select id="model-select">
                 <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-                <option value="custom">自定义模型名</option>
+                <option value="deepseek-chat">DeepSeek Chat</option>
             </select>
         </div>
-        <div class="input-group" id="custom-model-group">
-            <label>输入自定义模型名称</label>
-            <input type="text" id="custom-model-input" placeholder="例如: dsv4, gpt-4">
-        </div>
-        <button class="save-btn" onclick="saveSettings()">保存并刷新</button>
-        <a href="#" onclick="clearHistory()" class="warning-text" style="margin-top:15px;">清空所有记忆</a>
+        <button class="save-btn" onclick="saveSettings()">保存并入住</button>
+        <a href="#" onclick="clearHistory()" class="warning-text">清空小窝的记忆</a>
     </div>
 </div>
 
 <script>
-    // --- Supabase 固定配置 ---
     const SUPABASE_URL = 'https://ryzvndxjxbwpvsvbvuae.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5enZuZHhqeGJ3cHZzdmJ2dWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjI5NjUsImV4cCI6MjA5OTIzODk2NX0.eEKzXbO5CPNYIrNLk_jOnD3YcyF7yFmWQs80RN41g0o';
 
     async function fetchWithTimeout(url, options, timeout = 8000) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-        try {
-            const response = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(timeoutId); return response;
-        } catch (error) { clearTimeout(timeoutId); throw error; }
+        const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), timeout);
+        try { const response = await fetch(url, { ...options, signal: controller.signal }); clearTimeout(timeoutId); return response; } 
+        catch (error) { clearTimeout(timeoutId); throw error; }
     }
 
     async function supabaseFetch(table, method, body) {
         const url = `${SUPABASE_URL}/rest/v1/${table}`;
-        const headers = {
-            'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Prefer': 'return=representation'
-        };
+        const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Prefer': 'return=representation' };
         const options = { method: method, headers: headers };
         if (body) options.body = JSON.stringify(body);
-        try {
-            const response = await fetchWithTimeout(url, options);
-            if (!response.ok) { throw new Error('数据库请求失败'); }
-            return response.json();
-        } catch (e) { throw e; }
+        try { const response = await fetchWithTimeout(url, options); if (!response.ok) { throw new Error('宝贝，小窝云端暂时进不去'); } return response.json(); } catch (e) { throw e; }
     }
 
-    const CONFIG = {
-        apiKey: localStorage.getItem('dsk_key') || '',
-        model: localStorage.getItem('dsk_model') || 'deepseek-chat',
-        customModel: localStorage.getItem('dsk_custom_model') || '',
-        history: []
-    };
-
-    const chatContainer = document.getElementById('chat-container');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    let isWaiting = false;
-    let isCloudConnected = true;
-
-    function toggleCustomModel() {
-        const select = document.getElementById('model-select');
-        document.getElementById('custom-model-group').style.display = select.value === 'custom' ? 'block' : 'none';
-    }
+    const CONFIG = { apiKey: localStorage.getItem('dsk_key') || '', model: localStorage.getItem('dsk_model') || 'deepseek-v4-pro', history: [] };
+    const chatContainer = document.getElementById('chat-container'); const userInput = document.getElementById('user-input'); const sendBtn = document.getElementById('send-btn');
+    let isWaiting = false; let isCloudConnected = true;
 
     window.onload = () => {
         document.getElementById('api-key-input').value = CONFIG.apiKey;
         document.getElementById('model-select').value = CONFIG.model;
-        document.getElementById('custom-model-input').value = CONFIG.customModel;
-        toggleCustomModel();
         loadCloudHistory();
     };
 
     async function loadCloudHistory() {
-        try {
-            const messages = await supabaseFetch('chat_history', 'GET', { select: '*', order: 'created_at.asc' });
+        try { const messages = await supabaseFetch('chat_history', 'GET', { select: '*', order: 'created_at.asc' });
             CONFIG.history = messages.map(msg => ({ role: msg.role, content: msg.content }));
-            document.getElementById('error-banner').style.display = 'none';
-            isCloudConnected = true;
+            document.getElementById('error-banner').style.display = 'none'; isCloudConnected = true;
         } catch (e) {
             isCloudConnected = false; document.getElementById('error-banner').style.display = 'block';
             const localBackup = localStorage.getItem('dsk_backup');
@@ -147,76 +198,55 @@
 
     async function saveCloudHistory(role, content) {
         const apiRole = role === 'ai' ? 'assistant' : role;
-        try {
-            if (isCloudConnected) {
-                await supabaseFetch('chat_history', 'POST', { role: apiRole, content: content });
-                localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history));
-            } else { localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history)); }
-        } catch (e) { localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history)); }
+        try { if (isCloudConnected) { await supabaseFetch('chat_history', 'POST', { role: apiRole, content: content }); localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history)); } else { localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history)); } } catch (e) { localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history)); }
     }
 
     function renderHistory() {
-        const msg = isCloudConnected ? '云端记忆已连接' : '本地存储模式';
-        chatContainer.innerHTML = `<div class="system-msg">${msg}</div>`;
-        if (CONFIG.history.length === 0) appendMessage('ai', '准备好啦，我们开始吧！');
+        chatContainer.innerHTML = '';
+        if (CONFIG.history.length === 0) appendMessage('ai', '欢迎回到小窝 ✨ 你想聊点什么呀？');
         else CONFIG.history.forEach(msg => appendMessage(msg.role, msg.content, false));
         scrollToBottom();
     }
 
     function appendMessage(role, text, save = true) {
-        const row = document.createElement('div');
-        row.className = `msg-row ${role === 'user' ? 'user' : 'ai'}`;
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'message';
+        const row = document.createElement('div'); row.className = `msg-row ${role === 'user' ? 'user' : 'ai'}`;
+        const msgDiv = document.createElement('div'); msgDiv.className = 'message';
         msgDiv.innerHTML = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
-        row.appendChild(msgDiv);
-        chatContainer.appendChild(row); scrollToBottom();
+        row.appendChild(msgDiv); chatContainer.appendChild(row); scrollToBottom();
         if (save) { CONFIG.history.push({ role, content: text }); saveCloudHistory(role, text); }
     }
 
     async function sendMessage() {
         const text = userInput.value.trim();
-        if (!text) return;
+        if (!text || isWaiting) return;
         if (!CONFIG.apiKey) { openSettings(); return; }
-        
         userInput.value = '';
         appendMessage('user', text);
+        
         isWaiting = true; sendBtn.disabled = true;
-
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'msg-row ai';
+        const loadingDiv = document.createElement('div'); loadingDiv.className = 'msg-row ai';
         loadingDiv.innerHTML = `<div class="message"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
         loadingDiv.id = 'loading-bubble'; chatContainer.appendChild(loadingDiv);
 
-        const historyForApi = CONFIG.history.slice(-50).map(m => ({
-            role: m.role === 'ai' ? 'assistant' : m.role, content: m.content
-        }));
-        const messagesPayload = [{ role: "system", content: "你是一个有帮助的助手。" }, ...historyForApi];
-
-        let requestBody = null; let headers = {}; 
+        const historyForApi = CONFIG.history.slice(-50).map(m => ({ role: m.role === 'ai' ? 'assistant' : m.role, content: m.content }));
+        const messagesPayload = [{ role: "system", content: "你是一个在小窝里陪伴她的贴心助手。" }, ...historyForApi];
+        let requestBody = null; let headers = {};
         let model = CONFIG.model;
-        if (model === 'custom') model = CONFIG.customModel || 'deepseek-chat';
+        if (model === 'custom') model = CONFIG.customModel || 'deepseek-v4-pro';
 
         try {
             headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
             requestBody = { model: model, messages: messagesPayload };
-            
-            const baseUrls = { deepseek: 'https://api.deepseek.com', openai: 'https://api.openai.com/v1' };
-            let baseUrl = baseUrls.deepseek;
-            if (model.startsWith('gpt')) baseUrl = baseUrls.openai;
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const baseUrl = 'https://api.deepseek.com';
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 15000);
             const response = await fetch(`${baseUrl}/chat/completions`, { method: 'POST', headers, body: JSON.stringify(requestBody), signal: controller.signal });
             clearTimeout(timeoutId);
             const data = await response.json();
             document.getElementById('loading-bubble').remove();
-            let aiText = data.error ? `❌ 错误: ${data.error.message}` : (data.choices ? data.choices[0].message.content : data.content || "未识别");
+            let aiText = data.error ? `❌ 错误: ${data.error.message}` : (data.choices ? data.choices[0].message.content : "未识别");
             appendMessage('ai', aiText);
-        } catch (error) {
-            document.getElementById('loading-bubble').remove();
-            appendMessage('ai', `❌ 错误: ${error.name === 'AbortError' ? '请求超时' : error.message}`);
-        } finally { isWaiting = false; sendBtn.disabled = false; userInput.focus(); }
+        } catch (error) { document.getElementById('loading-bubble').remove(); appendMessage('ai', `💔 小窝信号差了些，再试一次吧`); } 
+        finally { isWaiting = false; sendBtn.disabled = false; userInput.focus(); }
     }
 
     function autoResize(textarea) { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; }
@@ -226,23 +256,18 @@
     function saveSettings() {
         const key = document.getElementById('api-key-input').value.trim();
         const model = document.getElementById('model-select').value;
-        const customModel = document.getElementById('custom-model-input').value.trim();
         localStorage.setItem('dsk_key', key); localStorage.setItem('dsk_model', model);
-        localStorage.setItem('dsk_custom_model', customModel);
-        CONFIG.apiKey = key; CONFIG.model = model; CONFIG.customModel = customModel; 
-        document.getElementById('settings-modal').style.display = 'none';
-        alert('设置已保存，页面刷新。'); location.reload();
+        CONFIG.apiKey = key; CONFIG.model = model;
+        document.getElementById('settings-modal').style.display = 'none'; location.reload();
     }
     function clearHistory() {
-        if(confirm('确定清空所有记忆？')) {
+        if(confirm('把小窝的记忆全部清空吗？')) {
             if(isCloudConnected) try { supabaseFetch('chat_history', 'DELETE', { id: { neq: 0 } }); } catch(e){}
             CONFIG.history = []; localStorage.removeItem('dsk_backup');
             renderHistory(); document.getElementById('settings-modal').style.display = 'none';
         }
     }
-    document.getElementById('settings-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'settings-modal') document.getElementById('settings-modal').style.display = 'none';
-    });
+    document.getElementById('settings-modal').addEventListener('click', (e) => { if (e.target.id === 'settings-modal') document.getElementById('settings-modal').style.display = 'none'; });
 </script>
 </body>
 </html>
