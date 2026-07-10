@@ -31,7 +31,7 @@
         .msg-row.ai .message { background-color: var(--ai-msg-bg); color: var(--text-color); border-bottom-left-radius: 4px; }
         .system-msg { align-self: center; font-size: 12px; color: var(--sub-text); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 10px; }
         .input-area { padding: 12px 15px calc(15px + env(safe-area-inset-bottom)); background-color: var(--header-bg); border-top: 1px solid #333; display: flex; gap: 10px; align-items: flex-end; }
-        .input-actions { display: flex; align-items: center; gap: 8px; }
+        .input-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .attach-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--input-bg); border: none; color: var(--sub-text); font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         textarea { flex: 1; min-width: 0; background-color: var(--input-bg); border: 1px solid transparent; border-radius: 20px; padding: 10px 15px; color: var(--text-color); font-size: 16px; resize: none; max-height: 120px; min-height: 44px; line-height: 24px; }
         textarea::placeholder { color: var(--sub-text); }
@@ -56,15 +56,21 @@
     <h1>DeepSeek <span style="font-weight:400; font-size:14px; color:#aaa;">小窝</span></h1>
     <button class="header-btn" onclick="openSettings()">⚙️ 设置</button>
 </header>
-<div id="chat-container"><div class="system-msg">正在连接云端记忆...</div></div>
+<div id="chat-container"><div class="system-msg">正在连接记忆...</div></div>
 <div class="input-area">
     <div class="input-actions">
-        <button class="attach-btn" id="attach-img-btn" onclick="document.getElementById('img-input').click()">📎</button>
+        <!-- 图片上传 -->
+        <button class="attach-btn" onclick="document.getElementById('img-input').click()">📎</button>
         <input type="file" id="img-input" accept="image/*" style="display:none" onchange="handleImageSelect(this)">
+        
+        <!-- 新增文件上传 (支持txt/json) -->
+        <button class="attach-btn" onclick="document.getElementById('file-input').click()">📄</button>
+        <input type="file" id="file-input" accept=".txt,.json,.md,.log" style="display:none" onchange="handleFileSelect(this)">
     </div>
     <textarea id="user-input" placeholder="输入消息..." rows="1" oninput="autoResize(this)"></textarea>
     <button id="send-btn" onclick="sendMessage()">➤</button>
 </div>
+
 <div id="settings-modal" class="modal">
     <div class="modal-content">
         <h2>⚙️ 配置小窝</h2>
@@ -77,6 +83,9 @@
                 <option value="gpt-4o">GPT-4o</option>
             </select>
         </div>
+        <!-- 补全了头像设置框 -->
+        <div class="input-group"><label>AI 头像链接</label><input type="text" id="ai-avatar-input" placeholder="https://...png"></div>
+        <div class="input-group"><label>我的头像链接</label><input type="text" id="user-avatar-input" placeholder="https://...png"></div>
         <button class="save-btn" onclick="saveSettings()">保存并刷新</button>
         <a href="#" onclick="clearHistory()" class="warning-text" style="margin-top:15px;">清空所有记忆</a>
     </div>
@@ -86,49 +95,36 @@
     const SUPABASE_URL = 'https://ryzvndxjxbwpvsvbvuae.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5enZuZHhqeGJ3cHZzdmJ2dWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjI5NjUsImV4cCI6MjA5OTIzODk2NX0.eEKzXbO5CPNYIrNLk_jOnD3YcyF7yFmWQs80RN41g0o';
 
-    // 带超时控制的 fetch 包装器（防止梯子卡住导致网页死锁）
+    // 带超时的 fetch
     async function fetchWithTimeout(url, options, timeout = 8000) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
         try {
             const response = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(timeoutId);
-            return response;
-        } catch (error) {
-            clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
-                throw new Error('请求超时（8秒未响应），请检查梯子节点');
-            }
-            throw error;
-        }
+            clearTimeout(timeoutId); return response;
+        } catch (error) { clearTimeout(timeoutId); throw error; }
     }
 
     async function supabaseFetch(table, method, body) {
         const url = `${SUPABASE_URL}/rest/v1/${table}`;
         const headers = {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Prefer': 'return=representation'
+            'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Prefer': 'return=representation'
         };
         const options = { method: method, headers: headers };
         if (body) options.body = JSON.stringify(body);
-
         try {
             const response = await fetchWithTimeout(url, options);
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                throw new Error(error.message || '数据库请求失败');
-            }
+            if (!response.ok) { throw new Error('数据库请求失败'); }
             return response.json();
-        } catch (e) {
-            throw e; // 抛出错误交由外部处理
-        }
+        } catch (e) { throw e; }
     }
 
     const CONFIG = {
         apiKey: localStorage.getItem('dsk_key') || '',
         model: localStorage.getItem('dsk_model') || 'deepseek-chat',
+        aiAvatar: localStorage.getItem('dsk_ai_avatar') || 'https://cdn-icons-png.flaticon.com/512/471/471533.png',
+        userAvatar: localStorage.getItem('dsk_user_avatar') || 'https://cdn-icons-png.flaticon.com/512/4140/4140047.png',
         history: []
     };
 
@@ -142,8 +138,10 @@
     window.onload = () => {
         document.getElementById('api-key-input').value = CONFIG.apiKey;
         document.getElementById('model-select').value = CONFIG.model;
-        // 立即渲染界面，不卡死
-        chatContainer.innerHTML = '<div class="system-msg">正在尝试连接记忆...</div>';
+        document.getElementById('ai-avatar-input').value = CONFIG.aiAvatar;
+        document.getElementById('user-avatar-input').value = CONFIG.userAvatar;
+        document.documentElement.style.setProperty('--ai-avatar', `url('${CONFIG.aiAvatar}')`);
+        document.documentElement.style.setProperty('--user-avatar', `url('${CONFIG.userAvatar}')`);
         loadCloudHistory();
     };
 
@@ -154,10 +152,7 @@
             document.getElementById('error-banner').style.display = 'none';
             isCloudConnected = true;
         } catch (e) {
-            console.warn("云端连接失败:", e.message);
-            // 如果超时或失败，立刻降级到本地
-            isCloudConnected = false;
-            document.getElementById('error-banner').style.display = 'block';
+            isCloudConnected = false; document.getElementById('error-banner').style.display = 'block';
             const localBackup = localStorage.getItem('dsk_backup');
             CONFIG.history = localBackup ? JSON.parse(localBackup) : [];
         }
@@ -170,27 +165,16 @@
             if (isCloudConnected) {
                 await supabaseFetch('chat_history', 'POST', { role: apiRole, content: content });
                 localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history));
-            } else {
-                localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history));
-            }
-        } catch (e) {
-            localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history));
-            if (e.message.includes('超时')) {
-                isCloudConnected = false;
-                document.getElementById('error-banner').style.display = 'block';
-            }
-        }
+            } else { localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history)); }
+        } catch (e) { localStorage.setItem('dsk_backup', JSON.stringify(CONFIG.history)); }
     }
 
     function renderHistory() {
         const msg = isCloudConnected ? '云端记忆已连接 ✦ 无限容量' : '本地存储模式 ✦ 换设备记忆会丢失';
         chatContainer.innerHTML = `<div class="system-msg">${msg}</div>`;
-        if (CONFIG.history.length === 0) {
-            appendMessage('ai', '我准备好啦！你可以导入旧记忆。');
-        } else {
-            CONFIG.history.forEach(msg => appendMessage(msg.role, msg.content, false));
-            scrollToBottom();
-        }
+        if (CONFIG.history.length === 0) appendMessage('ai', '我准备好啦！');
+        else CONFIG.history.forEach(msg => appendMessage(msg.role, msg.content, false));
+        scrollToBottom();
     }
 
     function appendMessage(role, text, save = true) {
@@ -203,20 +187,14 @@
         msgDiv.className = 'message';
         msgDiv.innerHTML = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
         row.appendChild(msgDiv);
-        chatContainer.appendChild(row);
-        scrollToBottom();
-
-        if (save) {
-            CONFIG.history.push({ role, content: text });
-            saveCloudHistory(role, text);
-        }
+        chatContainer.appendChild(row); scrollToBottom();
+        if (save) { CONFIG.history.push({ role, content: text }); saveCloudHistory(role, text); }
     }
 
     async function sendMessage() {
         const text = userInput.value.trim();
         if (!text && !currentImgData) return;
         if (!CONFIG.apiKey) { openSettings(); return; }
-        
         userInput.value = ''; currentImgData = null;
         appendMessage('user', text);
         isWaiting = true; sendBtn.disabled = true;
@@ -227,11 +205,9 @@
         loadingDiv.id = 'loading-bubble'; chatContainer.appendChild(loadingDiv);
 
         const historyForApi = CONFIG.history.slice(-50).map(m => ({
-            role: m.role === 'ai' ? 'assistant' : m.role,
-            content: m.content
+            role: m.role === 'ai' ? 'assistant' : m.role, content: m.content
         }));
         const messagesPayload = [{ role: "system", content: "你是一个有帮助的助手。" }, ...historyForApi];
-
         let requestBody = null; let headers = {}; const model = CONFIG.model;
 
         try {
@@ -245,33 +221,44 @@
                 headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
                 requestBody = { model: model, messages: messagesPayload };
             }
-
             const baseUrls = { deepseek: 'https://api.deepseek.com', claude: 'https://api.anthropic.com', openai: 'https://api.openai.com/v1' };
             let baseUrl = baseUrls.deepseek;
             if (model.startsWith('claude')) baseUrl = baseUrls.claude;
             else if (model.startsWith('gpt')) baseUrl = baseUrls.openai;
 
-            // 给发消息也加上超时，防止因为 API 连不上导致假死
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 15000);
-            
-            const response = await fetch(`${baseUrl}/chat/completions`, { 
-                method: 'POST', headers, body: JSON.stringify(requestBody), signal: controller.signal 
-            });
+            const response = await fetch(`${baseUrl}/chat/completions`, { method: 'POST', headers, body: JSON.stringify(requestBody), signal: controller.signal });
             clearTimeout(timeoutId);
-
             const data = await response.json();
             document.getElementById('loading-bubble').remove();
-            let aiText = data.error ? `❌ 错误: ${data.error.message}` : (data.choices ? data.choices[0].message.content : data.content || "未识别响应");
+            let aiText = data.error ? `❌ 错误: ${data.error.message}` : (data.choices ? data.choices[0].message.content : data.content || "未识别");
             appendMessage('ai', aiText);
         } catch (error) {
             document.getElementById('loading-bubble').remove();
-            let errMsg = error.message || "未知错误";
-            if (error.name === 'AbortError') errMsg = "请求超过15秒未响应，检查网络或梯子";
-            appendMessage('ai', `❌ 网络错误: ${errMsg}`);
-        } finally {
-            isWaiting = false; sendBtn.disabled = false; userInput.focus();
-        }
+            appendMessage('ai', `❌ 错误: ${error.name === 'AbortError' ? '请求超时' : error.message}`);
+        } finally { isWaiting = false; sendBtn.disabled = false; userInput.focus(); }
+    }
+
+    // === 上传图片 ===
+    function handleImageSelect(input) {
+        const file = input.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) { currentImgData = e.target.result; userInput.value = `[已附加图片] ` + userInput.value; userInput.focus(); };
+        reader.readAsDataURL(file);
+    }
+
+    // === 新增：上传文件 ===
+    function handleFileSelect(input) {
+        const file = input.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            userInput.value = `[📄 已读文件: ${file.name}]\n` + content.substring(0, 3000) + (content.length > 3000 ? "\n... (内容过长已截断)" : "");
+            userInput.focus();
+            // 如果文件很大，使用截断内容，防止超长。DeepSeek 上下文长，但防抖动。
+        };
+        reader.readAsText(file);
     }
 
     function autoResize(textarea) { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; }
@@ -281,16 +268,19 @@
     function saveSettings() {
         const key = document.getElementById('api-key-input').value.trim();
         const model = document.getElementById('model-select').value;
+        const aiAv = document.getElementById('ai-avatar-input').value.trim() || CONFIG.aiAvatar;
+        const userAv = document.getElementById('user-avatar-input').value.trim() || CONFIG.userAvatar;
         localStorage.setItem('dsk_key', key); localStorage.setItem('dsk_model', model);
-        CONFIG.apiKey = key; CONFIG.model = model;
+        localStorage.setItem('dsk_ai_avatar', aiAv); localStorage.setItem('dsk_user_avatar', userAv);
+        CONFIG.apiKey = key; CONFIG.model = model; CONFIG.aiAvatar = aiAv; CONFIG.userAvatar = userAv;
+        document.documentElement.style.setProperty('--ai-avatar', `url('${aiAv}')`);
+        document.documentElement.style.setProperty('--user-avatar', `url('${userAv}')`);
         document.getElementById('settings-modal').style.display = 'none';
         alert('已保存，页面刷新。'); location.reload();
     }
     function clearHistory() {
         if(confirm('确定清空所有记忆？')) {
-            if(isCloudConnected) {
-                try { supabaseFetch('chat_history', 'DELETE', { id: { neq: 0 } }); } catch(e){}
-            }
+            if(isCloudConnected) try { supabaseFetch('chat_history', 'DELETE', { id: { neq: 0 } }); } catch(e){}
             CONFIG.history = []; localStorage.removeItem('dsk_backup');
             renderHistory(); document.getElementById('settings-modal').style.display = 'none';
         }
