@@ -18,7 +18,6 @@
             --user-avatar: url('https://cdn-icons-png.flaticon.com/512/4140/4140047.png');
             --ai-avatar: url('https://cdn-icons-png.flaticon.com/512/471/471533.png');
         }
-        /* 深色模式随系统 */
         @media (prefers-color-scheme: dark) {
             :root { --bg-color: #1a1a1a; --chat-bg: #2d2d2d; --ai-msg-bg: #3a3a3a; --text-color: #ffffff; --sub-text: #a0a0a0; --input-bg: #333333; --header-bg: #1a1a1a; }
         }
@@ -39,72 +38,46 @@
             flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
         }
         
-        /* 消息气泡与头像 */
-        .msg-row {
-            display: flex; align-items: flex-start; gap: 10px; max-width: 100%;
-            animation: fadeIn 0.3s ease;
-        }
+        .msg-row { display: flex; align-items: flex-start; gap: 10px; max-width: 100%; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .msg-row.user { flex-direction: row-reverse; align-self: flex-end; }
         .msg-row.ai { align-self: flex-start; }
         
-        .msg-avatar {
-            width: 36px; height: 36px; border-radius: 50%; background-size: cover; background-position: center; flex-shrink: 0;
-        }
+        .msg-avatar { width: 36px; height: 36px; border-radius: 50%; background-size: cover; background-position: center; flex-shrink: 0; }
         .msg-avatar.user-avatar { background-image: var(--user-avatar); }
         .msg-avatar.ai-avatar { background-image: var(--ai-avatar); }
 
-        .message {
-            padding: 12px 16px; border-radius: var(--border-radius); font-size: 16px; line-height: 1.5;
-            word-wrap: break-word; max-width: 70%;
-        }
+        .message { padding: 12px 16px; border-radius: var(--border-radius); font-size: 16px; line-height: 1.5; word-wrap: break-word; max-width: 70%; }
         .msg-row.user .message { background-color: var(--user-msg-bg); color: white; border-bottom-right-radius: 4px; }
         .msg-row.ai .message { background-color: var(--ai-msg-bg); color: var(--text-color); border-bottom-left-radius: 4px; }
         .system-msg { align-self: center; font-size: 12px; color: var(--sub-text); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 10px; }
 
-        /* 输入区 */
-        .input-area {
-            padding: 12px 15px calc(15px + env(safe-area-inset-bottom)); background-color: var(--header-bg); border-top: 1px solid #333;
-            display: flex; gap: 10px; align-items: flex-end;
-        }
+        .input-area { padding: 12px 15px calc(15px + env(safe-area-inset-bottom)); background-color: var(--header-bg); border-top: 1px solid #333; display: flex; gap: 10px; align-items: flex-end; }
         .input-actions { display: flex; align-items: center; gap: 8px; }
-        .attach-btn {
-            width: 34px; height: 34px; border-radius: 50%; background: var(--input-bg); border: none; color: var(--sub-text);
-            font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer;
-        }
-        textarea {
-            flex: 1; min-width: 0; background-color: var(--input-bg); border: 1px solid transparent;
-            border-radius: 20px; padding: 10px 15px; color: var(--text-color); font-size: 16px; resize: none;
-            max-height: 120px; min-height: 44px; line-height: 24px;
-        }
+        .attach-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--input-bg); border: none; color: var(--sub-text); font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        textarea { flex: 1; min-width: 0; background-color: var(--input-bg); border: 1px solid transparent; border-radius: 20px; padding: 10px 15px; color: var(--text-color); font-size: 16px; resize: none; max-height: 120px; min-height: 44px; line-height: 24px; }
         textarea::placeholder { color: var(--sub-text); }
-        #send-btn {
-            width: 44px; height: 44px; border-radius: 50%; background-color: var(--user-msg-bg); border: none; color: white;
-            display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0;
-        }
+        #send-btn { width: 44px; height: 44px; border-radius: 50%; background-color: var(--user-msg-bg); border: none; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; }
 
-        /* 模态框 */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px); z-index: 200; justify-content: center; align-items: center; padding: 20px;
-        }
-        .modal-content {
-            background: var(--header-bg); padding: 24px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: var(--header-bg); padding: 24px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .modal h2 { margin-top: 0; font-size: 18px; }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; font-size: 14px; color: var(--sub-text); }
         .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: var(--input-bg); color: var(--text-color); }
         .save-btn { width: 100%; padding: 12px; background: var(--user-msg-bg); color: white; border: none; border-radius: 8px; font-size: 16px; }
         .warning-text { color: #ff4444; font-size: 12px; text-decoration: none; display: block; text-align: center; margin-top: 10px; cursor: pointer; }
+        
         .dot { width: 8px; height: 8px; background: #888; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; display: inline-block; margin: 0 2px; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-        
-        /* 文件导入进度显示 */
         #import-progress { margin-top: 10px; font-size: 12px; color: var(--sub-text); text-align: center; }
+        
+        /* 错误提示横幅 */
+        #error-banner { display: none; text-align: center; padding: 10px; background-color: #ff4444; color: white; font-size: 13px; }
     </style>
 </head>
 <body>
+<div id="error-banner">⚠️ 云端连接失败，已切换为本地存储（换设备记录将不同）</div>
 <header>
     <h1>DeepSeek <span style="font-weight:400; font-size:14px; color:#aaa;">小窝</span></h1>
     <button class="header-btn" onclick="openSettings()">⚙️ 设置</button>
@@ -139,16 +112,45 @@
             <input type="file" id="import-file-input" style="margin-top:8px; color:var(--text-color);">
             <div id="import-progress"></div>
         </div>
-        <a href="#" onclick="clearHistory()" class="warning-text" style="margin-top:15px;">清空云端所有记忆</a>
+        <a href="#" onclick="clearHistory()" class="warning-text" style="margin-top:15px;">清空所有记忆</a>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="onSupabaseLoadError()"></script>
 <script>
-    // --- Supabase 固定配置（已配好） ---
+    // --- Supabase 固定配置 ---
     const SUPABASE_URL = 'https://ryzvndxjxbwpvsvbvuae.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5enZuZHhqeGJ3cHZzdmJ2dWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjI5NjUsImV4cCI6MjA5OTIzODk2NX0.eEKzXbO5CPNYIrNLk_jOnD3YcyF7yFmWQs80RN41g0o';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    let supabase = null;
+    let isCloudAvailable = true;
+
+    // 检测云端脚本加载失败
+    function onSupabaseLoadError() {
+        isCloudAvailable = false;
+        document.getElementById('error-banner').style.display = 'block';
+        document.querySelector('.system-msg').innerText = '⚠️ 云端服务连接失败，已切换至本地存储';
+    }
+
+    // 初始化保护
+    try {
+        if (typeof window.supabase !== 'undefined') {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+            // 如果脚本还未加载好
+            setTimeout(() => {
+                if (!supabase && typeof window.supabase !== 'undefined') {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } else if (!supabase) {
+                    isCloudAvailable = false;
+                    document.getElementById('error-banner').style.display = 'block';
+                }
+            }, 3000);
+        }
+    } catch (e) {
+        isCloudAvailable = false;
+        document.getElementById('error-banner').style.display = 'block';
+    }
 
     // --- 读取本地配置 ---
     const CONFIG = {
@@ -165,7 +167,6 @@
     let isWaiting = false;
     let currentImgData = null;
 
-    // --- 初始化 ---
     window.onload = () => {
         document.getElementById('api-key-input').value = CONFIG.apiKey;
         document.getElementById('model-select').value = CONFIG.model;
@@ -173,23 +174,34 @@
         document.getElementById('user-avatar-input').value = CONFIG.userAvatar;
         document.documentElement.style.setProperty('--ai-avatar', `url('${CONFIG.aiAvatar}')`);
         document.documentElement.style.setProperty('--user-avatar', `url('${CONFIG.userAvatar}')`);
-        loadCloudHistory();
         
-        // 监听文件导入
+        loadCloudHistory();
         document.getElementById('import-file-input').addEventListener('change', handleImportFile);
     };
 
     async function loadCloudHistory() {
-        try {
-            const { data, error } = await supabase.from('chat_history').select('*').order('created_at', { ascending: true });
-            if (error) throw error;
-            CONFIG.history = data.map(item => ({ role: item.role, content: item.content }));
-        } catch (e) { CONFIG.history = []; }
+        if (isCloudAvailable && supabase) {
+            try {
+                const { data, error } = await supabase.from('chat_history').select('*').order('created_at', { ascending: true });
+                if (error) throw error;
+                CONFIG.history = data.map(item => ({ role: item.role, content: item.content }));
+                renderHistory();
+                return;
+            } catch (e) { 
+                console.warn("云端连接超时，切换本地"); 
+                isCloudAvailable = false;
+                document.getElementById('error-banner').style.display = 'block';
+            }
+        }
+        // 降级到本地存储
+        const localBackup = localStorage.getItem('dsk_history_backup');
+        CONFIG.history = localBackup ? JSON.parse(localBackup) : [];
         renderHistory();
     }
 
     function renderHistory() {
-        chatContainer.innerHTML = '<div class="system-msg">云端记忆已连接 ✦ 无限容量</div>';
+        const msg = isCloudAvailable ? '云端记忆已连接 ✦ 无限容量' : '本地存储模式 ✦ 换设备记忆会丢失';
+        chatContainer.innerHTML = `<div class="system-msg">${msg}</div>`;
         if (CONFIG.history.length === 0) {
             appendMessage('ai', '我准备好啦！你可以通过设置里的“导入文件”把以前的对话历史一次性甩给我。');
         } else {
@@ -201,17 +213,14 @@
     function appendMessage(role, text, save = true) {
         const row = document.createElement('div');
         row.className = `msg-row ${role === 'user' ? 'user' : 'ai'}`;
-        
         const avatar = document.createElement('div');
         avatar.className = `msg-avatar ${role === 'user' ? 'user-avatar' : 'ai-avatar'}`;
         row.appendChild(avatar);
-
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message';
         let formattedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
         msgDiv.innerHTML = formattedText;
         row.appendChild(msgDiv);
-
         chatContainer.appendChild(row);
         scrollToBottom();
 
@@ -223,67 +232,52 @@
     }
 
     async function saveCloudHistory(role, content) {
-        try {
-            await supabase.from('chat_history').insert({ role: role, content: content });
-        } catch (e) { console.warn("云端保存失败"); }
+        if (isCloudAvailable && supabase) {
+            try {
+                await supabase.from('chat_history').insert({ role: role, content: content });
+                return;
+            } catch(e) {}
+        }
+        // 本地备份
+        localStorage.setItem('dsk_history_backup', JSON.stringify(CONFIG.history));
     }
 
-    // --- 甩文件导入长上下文 ---
     async function handleImportFile(e) {
         const file = e.target.files[0];
         if (!file) return;
         const progress = document.getElementById('import-progress');
         progress.innerText = '正在解析文件...';
-        
         try {
             const text = await file.text();
             let records = [];
-
-            // 尝试解析 JSON
             try {
                 const parsed = JSON.parse(text);
-                if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].role && parsed[0].content) {
-                    records = parsed;
-                }
+                if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].role && parsed[0].content) records = parsed;
             } catch (jsonErr) {
-                // 如果是纯文本，简单按行或分隔符切割
                 const lines = text.split(/\r?\n/);
-                let currentRole = 'user';
-                for (const line of lines) {
-                    if (line.trim()) records.push({ role: currentRole, content: line.trim() });
-                    // 这里简单假设纯文本都是用户发的。
+                for (const line of lines) if (line.trim()) records.push({ role: 'user', content: line.trim() });
+            }
+            if (records.length === 0) { progress.innerText = '❌ 无法识别文件结构'; return; }
+            progress.innerText = `🔄 正在导入 ${records.length} 条...`;
+            for (const rec of records) {
+                if (isCloudAvailable && supabase) {
+                    await supabase.from('chat_history').insert({ role: rec.role, content: rec.content });
+                } else {
+                    CONFIG.history.push({ role: rec.role, content: rec.content });
                 }
             }
-
-            if (records.length === 0) {
-                progress.innerText = '❌ 无法识别文件结构，请使用 [{"role":"user","content":"消息"}] 格式。';
-                return;
-            }
-
-            progress.innerText = `🔄 正在导入 ${records.length} 条记忆到云端...`;
-            // 批量写入 Supabase (每次一条，防止超限)
-            for (const rec of records) {
-                await supabase.from('chat_history').insert({ role: rec.role, content: rec.content });
-            }
-
-            progress.innerText = `✅ 成功导入 ${records.length} 条！页面即将刷新。`;
+            if (!isCloudAvailable) localStorage.setItem('dsk_history_backup', JSON.stringify(CONFIG.history));
+            progress.innerText = `✅ 导入成功！页面即将刷新。`;
             setTimeout(() => { location.reload(); }, 1500);
-        } catch (err) {
-            progress.innerText = `❌ 导入失败: ${err.message}`;
-        }
+        } catch (err) { progress.innerText = `❌ 导入失败: ${err.message}`; }
     }
 
-    // --- 发送消息及切换多模型 ---
     async function sendMessage() {
         const text = userInput.value.trim();
         if (!text && !currentImgData) return;
         if (!CONFIG.apiKey) { openSettings(); return; }
-
-        // 如果有图片，发送图片内容
         let finalContent = text || "请分析这张图片";
-        if (currentImgData) {
-            userInput.value = ''; currentImgData = null;
-        }
+        if (currentImgData) { userInput.value = ''; currentImgData = null; }
 
         appendMessage('user', finalContent);
         isWaiting = true; sendBtn.disabled = true;
@@ -293,54 +287,38 @@
         loadingDiv.id = 'loading-bubble';
         chatContainer.appendChild(loadingDiv);
 
-        const messagesPayload = [
-            { role: "system", content: "你是一个有帮助的助手。" },
-            ...CONFIG.history.slice(-30)
-        ];
-
+        const messagesPayload = [{ role: "system", content: "你是一个有帮助的助手。" }, ...CONFIG.history.slice(-30)];
         let requestBody = null; let headers = {};
         const model = CONFIG.model;
 
         try {
-            // --- 判断模型 API 接口结构 ---
             if (model.startsWith('deepseek')) {
                 headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
                 requestBody = { model: model, messages: messagesPayload, temperature: 0.7 };
-                // DeepSeek-VL 支持 image_url
-                if (model === 'deepseek-vl' && currentImgData) {
-                   messagesPayload.push({ role: "user", content: [{ type: "image_url", image_url: { url: currentImgData } }] });
-                }
+                if (model === 'deepseek-vl' && currentImgData) messagesPayload.push({ role: "user", content: [{ type: "image_url", image_url: { url: currentImgData } }] });
             } else if (model.startsWith('claude')) {
                 headers = { 'Content-Type': 'application/json', 'x-api-key': CONFIG.apiKey, 'anthropic-version': '2023-06-01' };
                 requestBody = { model: model, max_tokens: 4096, messages: messagesPayload };
-                if (currentImgData) {
-                   requestBody.messages.push({ role: "user", content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: currentImgData.split(',')[1] } }] });
-                }
-            } else { // OpenAI Compatible (GPT-4o)
+                if (currentImgData) requestBody.messages.push({ role: "user", content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: currentImgData.split(',')[1] } }] });
+            } else {
                 headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` };
                 requestBody = { model: model, messages: messagesPayload, temperature: 0.7 };
-                if (currentImgData) {
-                   messagesPayload.push({ role: "user", content: [{ type: "image_url", image_url: { url: currentImgData } }] });
-                }
+                if (currentImgData) messagesPayload.push({ role: "user", content: [{ type: "image_url", image_url: { url: currentImgData } }] });
             }
 
-            // 发送请求
             const baseUrls = { 'deepseek': 'https://api.deepseek.com', 'claude': 'https://api.anthropic.com', 'openai': 'https://api.openai.com/v1' };
             let baseUrl = baseUrls.deepseek;
             if (model.startsWith('claude')) baseUrl = baseUrls.claude;
             else if (model.startsWith('gpt')) baseUrl = baseUrls.openai;
-            else baseUrl = baseUrls.deepseek;
 
             const response = await fetch(`${baseUrl}/chat/completions`, { method: 'POST', headers: headers, body: JSON.stringify(requestBody) });
             const data = await response.json();
-            
             document.getElementById('loading-bubble').remove();
             let aiText = "";
             if (data.error) aiText = `❌ 错误: ${data.error.message}`;
             else if (data.choices && data.choices[0]) aiText = data.choices[0].message.content;
-            else if (data.content) aiText = data.content; // Claude 原始格式
+            else if (data.content) aiText = data.content;
             else aiText = "未识别的响应体";
-
             appendMessage('ai', aiText);
         } catch (error) {
             document.getElementById('loading-bubble').remove();
@@ -350,16 +328,10 @@
         }
     }
 
-    // --- 图片读取处理 ---
     function handleImageSelect(input) {
-        const file = input.files[0];
-        if (!file) return;
+        const file = input.files[0]; if (!file) return;
         const reader = new FileReader();
-        reader.onload = function(e) {
-            currentImgData = e.target.result; // 存储 Base64
-            userInput.value = `[已附加图片] ` + userInput.value;
-            userInput.focus();
-        };
+        reader.onload = function(e) { currentImgData = e.target.result; userInput.value = `[已附加图片] ` + userInput.value; userInput.focus(); };
         reader.readAsDataURL(file);
     }
 
@@ -374,24 +346,19 @@
         const model = document.getElementById('model-select').value;
         const aiAv = document.getElementById('ai-avatar-input').value.trim() || CONFIG.aiAvatar;
         const userAv = document.getElementById('user-avatar-input').value.trim() || CONFIG.userAvatar;
-        
-        localStorage.setItem('dsk_key', key);
-        localStorage.setItem('dsk_model', model);
-        localStorage.setItem('dsk_ai_avatar', aiAv);
-        localStorage.setItem('dsk_user_avatar', userAv);
-        
+        localStorage.setItem('dsk_key', key); localStorage.setItem('dsk_model', model);
+        localStorage.setItem('dsk_ai_avatar', aiAv); localStorage.setItem('dsk_user_avatar', userAv);
         CONFIG.apiKey = key; CONFIG.model = model; CONFIG.aiAvatar = aiAv; CONFIG.userAvatar = userAv;
         document.documentElement.style.setProperty('--ai-avatar', `url('${aiAv}')`);
         document.documentElement.style.setProperty('--user-avatar', `url('${userAv}')`);
-        
         document.getElementById('settings-modal').style.display = 'none';
-        alert('设置已保存！');
-        location.reload();
+        alert('设置已保存！'); location.reload();
     }
 
     function clearHistory() {
-        if(confirm('确定清空云端所有记忆吗？不可撤销。')) {
-            supabase.from('chat_history').delete().neq('id', 0);
+        if(confirm('确定清空所有记忆吗？不可撤销。')) {
+            if (isCloudAvailable && supabase) supabase.from('chat_history').delete().neq('id', 0);
+            localStorage.removeItem('dsk_history_backup');
             CONFIG.history = []; renderHistory();
             document.getElementById('settings-modal').style.display = 'none';
         }
